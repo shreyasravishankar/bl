@@ -1,0 +1,104 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+contract PeerLending {
+    mapping(address => uint256) public balances;
+    mapping(address => Loan) public loans;
+    struct Loan {
+        uint256 principal;
+        uint256 interestRate; // Annual interest rate in percentage
+        uint256 duration;     // Loan duration in days
+        uint256 startDate;
+    }
+    event LoanRequested(address indexed borrower, uint256 principal, uint256 interestRate, uint256 duration);
+    event LoanRepaid(address indexed borrower, uint256 amount);
+    function requestLoan(uint256 _principal, uint256 _interestRate, uint256 _duration) external {
+        require(_principal > 0, "Principal must be greater than 0");
+        require(_interestRate > 0, "Interest rate must be greater than 0");
+        require(_duration > 0, "Duration must be greater than 0");
+        uint256 startDate = block.timestamp;
+        Loan memory newLoan = Loan({principal: _principal, interestRate: _interestRate, duration: _duration, startDate: startDate});
+        loans[msg.sender] = newLoan;
+        balances[msg.sender] += _principal;
+        emit LoanRequested(msg.sender, _principal, _interestRate, _duration);
+    }
+    function repayLoan() external payable {
+        Loan storage loan = loans[msg.sender];
+        require(loan.principal > 0, "No active loan to repay");
+        require(block.timestamp <= loan.startDate + loan.duration * 1 days, "Loan is overdue");
+        uint256 totalRepayment = calculateTotalRepayment(loan.principal, loan.interestRate, loan.duration);
+        require(msg.value == totalRepayment, "Incorrect repayment amount");
+        balances[msg.sender] -= loan.principal;
+        delete loans[msg.sender];
+        emit LoanRepaid(msg.sender, totalRepayment);
+    }
+    function calculateTotalRepayment(uint256 _principal, uint256 _interestRate, uint256 _duration) internal pure returns (uint256) {
+        uint256 interestAmount = (_principal * _interestRate * _duration) / (365 days * 100);
+        return _principal + interestAmount;
+    }
+}
+-----------------------------------
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract CurrencyPool {
+    mapping(address => uint256) public balances;
+    uint256 public totalPoolBalance;
+
+    event Deposit(address indexed user, uint256 amount);
+    event Withdrawal(address indexed user, uint256 amount);
+
+    function deposit() external payable {
+        require(msg.value > 0, "Deposit amount must be greater than 0");
+
+        balances[msg.sender] += msg.value;
+        totalPoolBalance += msg.value;
+        emit Deposit(msg.sender, msg.value);
+    }
+
+    function withdraw(uint256 _amount) external {
+        require(_amount > 0, "Withdrawal amount must be greater than 0");
+        require(balances[msg.sender] >= _amount, "Insufficient balance");
+
+        uint256 share = (balances[msg.sender] * _amount) / totalPoolBalance;
+        balances[msg.sender] -= share;
+        totalPoolBalance -= share;
+
+        payable(msg.sender).transfer(share);
+        emit Withdrawal(msg.sender, share);
+    }
+}
+------------------------------
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract VotingSystem {
+    address public owner;
+    string[] public candidates;
+    mapping(address => bool) public hasVoted;
+    mapping(string => uint256) public votes;
+
+    event CandidateRegistered(string name);
+    event Voted(address indexed voter, string candidate);
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only the owner can call this function");
+        _;
+    }
+
+    constructor() {
+        owner = msg.sender;
+    }
+
+    function registerCandidate(string memory _name) public onlyOwner {
+        candidates.push(_name);
+        emit CandidateRegistered(_name);
+    }
+
+    function vote(string memory _candidate) public {
+        require(!hasVoted[msg.sender], "You have already voted");
+        require(bytes(_candidate).length > 0, "Invalid candidate name");
+        votes[_candidate]++;
+        hasVoted[msg.sender] = true;
+        emit Voted(msg.sender, _candidate);
+    }
+}
