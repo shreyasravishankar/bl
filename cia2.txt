@@ -1,0 +1,675 @@
+1a
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract ArithmeticOperations {
+    // Function to perform addition
+    function addition(uint256 a, uint256 b) public pure returns (uint256) {
+        return a + b;
+    }
+
+    // Function to perform subtraction
+    function subtraction(uint256 a, uint256 b) public pure returns (uint256) {
+        require(a >= b, "Subtraction underflow");
+        return a - b;
+    }
+
+    // Function to perform multiplication
+    function multiplication(uint256 a, uint256 b) public pure returns (uint256) {
+        return a * b;
+    }
+
+    // Function to perform division
+    function division(uint256 a, uint256 b) public pure returns (uint256) {
+        require(b != 0, "Division by zero");
+        return a / b;
+    }
+}
+--------------------
+1b
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract EtherSender {
+    // Function to send Ether to a specified address
+    function sendEther(address payable recipient) external payable {
+        require(msg.value > 0, "Amount to send must be greater than zero");
+        recipient.transfer(msg.value);
+    }
+}
+---------------
+2a
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract TodoList {
+    struct Todo {
+        string taskName;
+        bool completed;
+    }
+
+    Todo[] public todos;
+
+    // Function to create a new task and add it to the to-do list
+    function createTask(string memory _taskName) public {
+        Todo memory newTodo = Todo({
+            taskName: _taskName,
+            completed: false
+        });
+        todos.push(newTodo);
+    }
+
+    // Function to update the task name and completion status for a specific task
+    function updateTask(uint256 index, string memory _taskName, bool _completed) public {
+        require(index < todos.length, "Task index out of bounds");
+        Todo storage todoToUpdate = todos[index];
+        todoToUpdate.taskName = _taskName;
+        todoToUpdate.completed = _completed;
+    }
+
+    // Function to get task details by index
+    function getTask(uint256 index) public view returns (string memory, bool) {
+        require(index < todos.length, "Task index out of bounds");
+        Todo memory todo = todos[index];
+        return (todo.taskName, todo.completed);
+    }
+
+    // Function to get the total number of tasks in the to-do list
+    function getTaskCount() public view returns (uint256) {
+        return todos.length;
+    }
+}
+----------------
+2b
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract OuterContract {
+    // Declare an inner contract
+    InnerContract innerContract;
+
+    constructor() {
+        // Initialize the inner contract
+        innerContract = new InnerContract();
+    }
+
+    // Function to interact with the inner contract
+    function getInnerValue() public view returns (uint) {
+        return innerContract.getValue();
+    }
+}
+
+contract InnerContract {
+    uint private innerValue;
+
+    constructor() {
+        innerValue = 42;
+    }
+
+    // Function to get the value from the inner contract
+    function getValue() public view returns (uint) {
+        return innerValue;
+    }
+}
+---------------
+3a
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract Event1 {
+    event NormalEvent(string message, uint val);
+    event IndexedEvent(address indexed user, uint value);
+
+    function triggerEvents(string memory message, uint val, address user, uint value) public {
+        // Emit the normal event with a string message and a uint value
+        emit NormalEvent(message, val);
+
+        // Emit the indexed event with an address (indexed) and a uint value
+        emit IndexedEvent(user, value);
+    }
+}
+-------------
+3b
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+// Parent contract A
+contract A {
+    string public messageA;
+
+    constructor(string memory _messageA) {
+        messageA = _messageA;
+    }
+}
+
+// Parent contract B
+contract B {
+    string public messageB;
+
+    constructor(string memory _messageB) {
+        messageB = _messageB;
+    }
+}
+
+// Child contract C inherits from both A and B
+contract C is A, B {
+    string public messageC;
+
+    constructor(string memory _messageA, string memory _messageB, string memory _messageC) A(_messageA) B(_messageB) {
+        messageC = _messageC;
+    }
+}
+==================
+4a
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract Parent {
+    string public message;
+
+    constructor(string memory _message) {
+        message = _message;
+    }
+}
+
+contract Child is Parent {
+    string public childMessage;
+
+    constructor(string memory _message, string memory _childMessage) Parent(_message) {
+        childMessage = _childMessage;
+    }
+}
+------------
+4b
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract CarRegistry {
+    struct Car {
+        string model;
+        uint16 year;
+        address owner;
+    }
+
+    Car[] public cars; // Array to store Car structs
+    mapping(uint256 => address) public carToOwner; // Mapping to track the owner of each car
+
+    // Function to add a new car to the registry
+    function addCar(string memory _model, uint16 _year) public {
+        Car memory newCar = Car({
+            model: _model,
+            year: _year,
+            owner: msg.sender
+        });
+
+        uint256 carId = cars.push(newCar) - 1; // Get the index of the newly added car
+
+        // Update the car ownership mapping
+        carToOwner[carId] = msg.sender;
+    }
+
+    // Function to retrieve the details of a specific car by its index
+    function getCar(uint256 carId) public view returns (string memory, uint16, address) {
+        require(carId < cars.length, "Car ID does not exist");
+        Car memory car = cars[carId];
+        return (car.model, car.year, car.owner);
+    }
+
+    // Function to get the total number of cars in the registry
+    function getCarCount() public view returns (uint256) {
+        return cars.length;
+    }
+}
+------------
+5a
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract SimpleWallet {
+    address public owner;
+    mapping(address => uint256) public balances;
+
+    event Deposit(address indexed from, uint256 amount);
+    event Withdrawal(address indexed to, uint256 amount);
+
+    constructor() {
+        owner = msg.sender;
+    }
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only the owner can perform this action");
+        _;
+    }
+
+    function deposit() public payable {
+        require(msg.value > 0, "Amount must be greater than zero");
+        balances[msg.sender] += msg.value;
+        emit Deposit(msg.sender, msg.value);
+    }
+
+    function withdraw(uint256 amount) public onlyOwner {
+        require(balances[msg.sender] >= amount, "Insufficient balance");
+        balances[msg.sender] -= amount;
+        payable(msg.sender).transfer(amount);
+        emit Withdrawal(msg.sender, amount);
+    }
+
+    function getBalance() public view returns (uint256) {
+        return balances[msg.sender];
+    }
+}
+---------------
+5b
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract StaticMemoryArrayDemo {
+    function getSum() public pure returns (uint) {
+        // Declare a static memory array with 3 elements
+        uint[3] memory numbers = [1, 2, 3];
+
+        // Calculate the sum of the elements in the array
+        uint sum = 0;
+        for (uint i = 0; i < numbers.length; i++) {
+            sum += numbers[i];
+        }
+
+        return sum;
+    }
+}
+-------------
+6a
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract PaymentContract {
+    // Fallback function (also used as the receive function in this example)
+    fallback() external payable {
+        // Fallback function is called when the contract receives Ether without data.
+        // In this example, we just log the received amount.
+        emit Received(msg.sender, msg.value);
+    }
+
+    // Receive function (introduced in Solidity 0.6.0)
+    receive() external payable {
+        // The receive function is a more specialized version of the fallback function.
+        // It is automatically called when the contract receives Ether without data.
+        // In this example, we just log the received amount.
+        emit Received(msg.sender, msg.value);
+    }
+
+    event Received(address indexed sender, uint256 amount);
+
+    function sendEther() public payable {
+        // This function allows anyone to send Ether to the contract.
+        // It doesn't need to have any code inside it.
+    }
+
+    function getBalance() public view returns (uint256) {
+        return address(this).balance;
+    }
+}
+------------------
+6b
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract PayableConstructorDemo {
+    address public owner;
+
+    constructor() payable {
+        // The constructor can receive Ether when it's deployed
+        owner = msg.sender;
+
+        // Log the amount of Ether received during deployment
+        emit Received(msg.sender, msg.value);
+    }
+
+    event Received(address indexed sender, uint256 amount);
+
+    function getBalance() public view returns (uint256) {
+        return address(this).balance;
+    }
+}
+-----------------
+7a
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract OuterContract {
+    string public outerMessage;
+
+    // Define an inner contract within the outer contract
+    contract InnerContract {
+        string public innerMessage;
+
+        constructor(string memory _message) {
+            innerMessage = _message;
+        }
+    }
+
+    // Create an instance of the inner contract
+    InnerContract public inner;
+
+    constructor(string memory _outerMessage, string memory _innerMessage) {
+        outerMessage = _outerMessage;
+
+        // Deploy the inner contract within the constructor of the outer contract
+        inner = new InnerContract(_innerMessage);
+    }
+}
+----------------
+7b
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract MappingDemo {
+    // Mapping to store balances of users
+    mapping(address => uint256) public balances;
+
+    // Nested mapping to store user profiles
+    mapping(address => mapping(string => string)) public userProfiles;
+
+    // Function to set a user's balance
+    function setBalance(address user, uint256 balance) public {
+        balances[user] = balance;
+    }
+
+    // Function to get a user's balance
+    function getBalance(address user) public view returns (uint256) {
+        return balances[user];
+    }
+
+    // Function to set a user's profile information
+    function setProfile(address user, string memory key, string memory value) public {
+        userProfiles[user][key] = value;
+    }
+
+    // Function to get a user's profile information
+    function getProfile(address user, string memory key) public view returns (string memory) {
+        return userProfiles[user][key];
+    }
+}
+------------------------
+8
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract MyToken {
+    string public name = "My Token";
+    string public symbol = "MTK";
+    uint8 public decimals = 18;
+    uint256 public totalSupply = 1000000 * 10**uint256(decimals);
+
+    mapping(address => uint256) public balanceOf;
+    mapping(address => mapping(address => uint256)) public allowance;
+
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+
+    constructor() {
+        balanceOf[msg.sender] = totalSupply;
+    }
+
+    function transfer(address to, uint256 value) public returns (bool success) {
+        require(to != address(0), "Invalid address");
+        require(balanceOf[msg.sender] >= value, "Insufficient balance");
+
+        balanceOf[msg.sender] -= value;
+        balanceOf[to] += value;
+        emit Transfer(msg.sender, to, value);
+        return true;
+    }
+
+    function approve(address spender, uint256 value) public returns (bool success) {
+        allowance[msg.sender][spender] = value;
+        emit Approval(msg.sender, spender, value);
+        return true;
+    }
+
+    function transferFrom(address from, address to, uint256 value) public returns (bool success) {
+        require(from != address(0), "Invalid sender address");
+        require(to != address(0), "Invalid recipient address");
+        require(balanceOf[from] >= value, "Insufficient balance");
+        require(allowance[from][msg.sender] >= value, "Allowance exceeded");
+
+        balanceOf[from] -= value;
+        balanceOf[to] += value;
+        allowance[from][msg.sender] -= value;
+        emit Transfer(from, to, value);
+        return true;
+    }
+}
+-----------------
+9a
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract KeccakExample {
+    function calculateKeccak256(string memory input) public pure returns (bytes32) {
+        bytes32 hash = keccak256(abi.encodePacked(input));
+        return hash;
+    }
+}
+-----------------
+9b
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+library MathLibrary {
+    function add(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a + b;
+    }
+
+    function subtract(uint256 a, uint256 b) internal pure returns (uint256) {
+        require(a >= b, "Subtraction underflow");
+        return a - b;
+    }
+
+    function multiply(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a * b;
+    }
+
+    function divide(uint256 a, uint256 b) internal pure returns (uint256) {
+        require(b != 0, "Division by zero");
+        return a / b;
+    }
+}
+
+contract Calculator {
+    using MathLibrary for uint256;
+
+    function add(uint256 a, uint256 b) public pure returns (uint256) {
+        return a.add(b);
+    }
+
+    function subtract(uint256 a, uint256 b) public pure returns (uint256) {
+        return a.subtract(b);
+    }
+
+    function multiply(uint256 a, uint256 b) public pure returns (uint256) {
+        return a.multiply(b);
+    }
+
+    function divide(uint256 a, uint256 b) public pure returns (uint256) {
+        return a.divide(b);
+    }
+}
+---------------
+10a
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract MultiSignatureWallet {
+    address[] public owners;
+    mapping(address => bool) public isOwner;
+    uint256 public numConfirmationsRequired;
+
+    struct Transaction {
+        address to;
+        uint256 value;
+        bytes data;
+        bool executed;
+        uint256 numConfirmations;
+        mapping(address => bool) confirmations;
+    }
+
+    Transaction[] public transactions;
+
+    event Deposit(address indexed sender, uint256 value, uint256 balance);
+    event SubmitTransaction(
+        address indexed owner,
+        uint256 indexed transactionId,
+        address to,
+        uint256 value,
+        bytes data
+    );
+    event ConfirmTransaction(address indexed owner, uint256 indexed transactionId);
+    event ExecuteTransaction(address indexed owner, uint256 indexed transactionId);
+
+    constructor(address[] memory _owners, uint256 _numConfirmationsRequired) {
+        require(_owners.length > 0, "Owners required");
+        require(
+            _numConfirmationsRequired > 0 && _numConfirmationsRequired <= _owners.length,
+            "Invalid number of confirmations"
+        );
+
+        for (uint256 i = 0; i < _owners.length; i++) {
+            address owner = _owners[i];
+            require(owner != address(0), "Invalid owner address");
+            require(!isOwner[owner], "Duplicate owner address");
+
+            owners.push(owner);
+            isOwner[owner] = true;
+        }
+
+        numConfirmationsRequired = _numConfirmationsRequired;
+    }
+
+    receive() external payable {
+        emit Deposit(msg.sender, msg.value, address(this).balance);
+    }
+
+    function submitTransaction(address to, uint256 value, bytes memory data)
+        public
+        onlyOwner
+    {
+        uint256 transactionId = transactions.length;
+
+        transactions.push(Transaction({
+            to: to,
+            value: value,
+            data: data,
+            executed: false,
+            numConfirmations: 0
+        }));
+
+        emit SubmitTransaction(msg.sender, transactionId, to, value, data);
+    }
+
+    function confirmTransaction(uint256 transactionId) public onlyOwner {
+        require(transactionId < transactions.length, "Transaction does not exist");
+        require(!transactions[transactionId].confirmations[msg.sender], "Already confirmed");
+        transactions[transactionId].confirmations[msg.sender] = true;
+        transactions[transactionId].numConfirmations += 1;
+
+        emit ConfirmTransaction(msg.sender, transactionId);
+    }
+
+    function executeTransaction(uint256 transactionId) public onlyOwner {
+        require(transactionId < transactions.length, "Transaction does not exist");
+        require(!transactions[transactionId].executed, "Already executed");
+        require(transactions[transactionId].numConfirmations >= numConfirmationsRequired, "Not enough confirmations");
+
+        Transaction storage transaction = transactions[transactionId];
+        transaction.executed = true;
+
+        (bool success, ) = transaction.to.call{value: transaction.value}(transaction.data);
+        require(success, "Transaction execution failed");
+
+        emit ExecuteTransaction(msg.sender, transactionId);
+    }
+
+    modifier onlyOwner() {
+        require(isOwner[msg.sender], "Not an owner");
+        _;
+    }
+}
+
+-------------
+10b
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+// Interface for a simple token contract
+interface IToken {
+    function transfer(address recipient, uint256 amount) external returns (bool);
+    function balanceOf(address account) external view returns (uint256);
+}
+
+// Contract that implements the interface
+contract MyToken is IToken {
+    string public name = "My Token";
+    string public symbol = "MTK";
+    uint8 public decimals = 18;
+    uint256 public totalSupply = 1000000 * 10**uint256(decimals);
+
+    mapping(address => uint256) public balances;
+
+    constructor() {
+        balances[msg.sender] = totalSupply;
+    }
+
+    function transfer(address recipient, uint256 amount) public override returns (bool) {
+        require(balances[msg.sender] >= amount, "Insufficient balance");
+        balances[msg.sender] -= amount;
+        balances[recipient] += amount;
+        return true;
+    }
+
+    function balanceOf(address account) public view override returns (uint256) {
+        return balances[account];
+    }
+}
+--------------------
+11a
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract EnumStructExample {
+    // Define an enum for the possible states of an object
+    enum ObjectState { Created, Active, Inactive, Deleted }
+
+    // Define a struct to represent an object
+    struct MyObject {
+        string name;
+        uint256 value;
+        ObjectState state;
+    }
+
+    // Create an array of MyObject
+    MyObject[] public objects;
+
+    // Function to add a new object to the array
+    function addObject(string memory _name, uint256 _value) public {
+        MyObject memory newObject = MyObject({
+            name: _name,
+            value: _value,
+            state: ObjectState.Created
+        });
+        objects.push(newObject);
+    }
+
+    // Function to update the state of an object
+    function updateObjectState(uint256 index, ObjectState newState) public {
+        require(index < objects.length, "Invalid index");
+        objects[index].state = newState;
+    }
+
+    // Function to get the details of an object
+    function getObjectDetails(uint256 index) public view returns (string memory, uint256, ObjectState) {
+        require(index < objects.length, "Invalid index");
+        MyObject storage obj = objects[index];
+        return (obj.name, obj.value, obj.state);
+    }
+}
